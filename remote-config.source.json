@@ -1,12 +1,16 @@
 {
   "schemaVersion": 1,
-  "issuedAt": "2026-11-08T09:38:22.090Z",
+  "issuedAt": "2026-11-08T23:46:46.123Z",
   "killSwitch": {
     "all": false,
     "flowApi": false,
     "flowUi": false,
-    "upload": false,
-    "gemini": false
+    "flowMacro": false,
+    "flowImage": false,
+    "flowImageUpload": false,
+    "gemini": false,
+    "flowVideo": false,
+    "grok": false
   },
   "flow": {}
 }
