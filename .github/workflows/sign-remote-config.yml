@@ -1,0 +1,61 @@
+# 원격 설정(킬스위치) 서명·게시 — 운영자가 Actions 화면에서 [Run workflow] 로만 돌린다.
+# 개인키는 저장소 비밀 REMOTE_CONFIG_PRIVATE_KEY(ed25519 PEM)에만 있다. 꺼내 볼 수 없고 여기서 서명할 때만 쓴다.
+# 서명 형식은 소스 저장소 apps/image-farm/scripts/remote-config.mjs sign 과 같다.
+name: sign-remote-config
+
+on:
+  workflow_dispatch:
+    inputs:
+      config:
+        description: '서명 전 원격 설정 JSON 전체(remote-config.source.json 내용을 고쳐 붙여 넣기). issuedAt 은 지금 시각으로 바뀐다'
+        required: true
+        type: string
+
+permissions:
+  contents: write
+
+concurrency:
+  group: remote-config
+  cancel-in-progress: false
+
+jobs:
+  sign:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 서명
+        env:
+          CONFIG: ${{ inputs.config }}
+          PRIVATE_KEY: ${{ secrets.REMOTE_CONFIG_PRIVATE_KEY }}
+          # 앱에 든 공개키(빌드 기본값) — 서명이 이 키로 확인되지 않으면 올리지 않는다
+          PUBLIC_KEY: ACLkAE7AjFu/8s/iFWD6Gmpf/lqjx1afe6r8myHHe6E=
+        run: |
+          node --input-type=module -e '
+          import { createPrivateKey, createPublicKey, sign, verify } from "node:crypto";
+          import { readFileSync, writeFileSync, existsSync } from "node:fs";
+          if (!process.env.PRIVATE_KEY) throw new Error("비밀 REMOTE_CONFIG_PRIVATE_KEY 가 없다");
+          const cfg = JSON.parse(process.env.CONFIG);
+          if (cfg.schemaVersion !== 1 || typeof cfg.killSwitch !== "object") throw new Error("schemaVersion 1·killSwitch 가 있어야 한다");
+          cfg.issuedAt = new Date().toISOString();
+          if (existsSync("remote-config.source.json")) {
+            const prev = JSON.parse(readFileSync("remote-config.source.json", "utf-8"));
+            if (prev.issuedAt && Date.parse(prev.issuedAt) >= Date.parse(cfg.issuedAt)) throw new Error("issuedAt 이 이전 값보다 늦지 않다");
+          }
+          const payload = Buffer.from(JSON.stringify(cfg));
+          const sig = sign(null, payload, createPrivateKey(process.env.PRIVATE_KEY));
+          const spki = Buffer.concat([Buffer.from("302a300506032b6570032100", "hex"), Buffer.from(process.env.PUBLIC_KEY, "base64")]);
+          if (!verify(null, payload, createPublicKey({ key: spki, format: "der", type: "spki" }), sig)) throw new Error("앱 공개키로 확인되지 않는다 — 비밀 키가 다르다");
+          writeFileSync("remote-config.json", JSON.stringify({ payload: payload.toString("base64"), sig: sig.toString("base64") }) + "\n");
+          writeFileSync("remote-config.source.json", JSON.stringify(cfg, null, 2) + "\n");
+          console.log(JSON.stringify(cfg));
+          '
+      - name: 올리기
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add remote-config.json remote-config.source.json
+          git commit -m "chore: 원격 설정 서명 (${GITHUB_ACTOR}, run ${GITHUB_RUN_ID})"
+          git push

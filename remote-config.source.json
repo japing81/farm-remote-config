@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "issuedAt": "2026-11-08T09:23:39.033Z",
+  "killSwitch": {
+    "all": false,
+    "flowApi": false,
+    "flowUi": false,
+    "upload": false,
+    "gemini": false
+  },
+  "flow": {}
+}
