@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "issuedAt": "2026-11-08T23:46:46.123Z",
+  "issuedAt": "2026-11-11T16:37:58.329Z",
   "killSwitch": {
     "all": false,
     "flowApi": false,
@@ -12,5 +12,8 @@
     "flowVideo": false,
     "grok": false
   },
-  "flow": {}
+  "flow": {},
+  "license": {
+    "openAllUntil": "2026-11-11T17:37:26.010Z"
+  }
 }
