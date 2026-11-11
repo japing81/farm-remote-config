@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "issuedAt": "2026-11-11T16:52:58.165Z",
+  "issuedAt": "2026-11-11T21:10:29.070Z",
   "killSwitch": {
     "all": false,
     "flowApi": false,
@@ -12,5 +12,13 @@
     "flowVideo": false,
     "grok": false
   },
-  "flow": {}
+  "flow": {},
+  "apps": {
+    "omnivideofarm": {
+      "videoModelSet": "next"
+    },
+    "videofarm": {
+      "videoModelSet": "next"
+    }
+  }
 }
